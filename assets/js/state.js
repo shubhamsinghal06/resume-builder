@@ -1,6 +1,6 @@
 // Shared resume state and helpers.
 const KEY='resume-studio-v1';
-const emptyData=()=>({name:'',headline:'',email:'',phone:'',location:'',links:'',summary:'',skills:'',certifications:'',languages:'',photo:'',experience:[],projects:[],education:[]});
+const emptyData=()=>({name:'',headline:'',email:'',phone:'',location:'',links:'',summary:'',domainExpertise:'',skills:'',certifications:'',languages:'',photo:'',experience:[],projects:[],education:[]});
 let data=emptyData();
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
