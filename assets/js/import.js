@@ -129,40 +129,86 @@ async function extractPdfImage(page, pdfjs) {
   return '';
 }
 
+function setImportProgress(value,label) {
+  const wrap=$('importProgressWrap');
+  wrap.hidden=false;
+  $('importProgress').value=Math.max(0,Math.min(100,value));
+  $('importProgressPercent').textContent=Math.round(value)+'%';
+  $('importProgressLabel').textContent=label;
+}
+function finishImportProgress() {
+  $('importProgress').value=100;
+  $('importProgressPercent').textContent='100%';
+  $('importProgressLabel').textContent='Import complete';
+  window.setTimeout(()=>{$('importProgressWrap').hidden=true},2200);
+}
+function pdfItemsToLines(content) {
+  const rows=[];
+  for(const item of (content.items||[])) {
+    if(!item.str || !item.str.trim()) continue;
+    const y=Array.isArray(item.transform)?item.transform[5]:0;
+    const x=Array.isArray(item.transform)?item.transform[4]:0;
+    let row=rows.find(r=>Math.abs(r.y-y)<3);
+    if(!row){row={y,items:[]};rows.push(row)}
+    row.items.push({x,str:item.str.trim()});
+  }
+  return rows.sort((a,b)=>b.y-a.y).map(row=>row.items.sort((a,b)=>a.x-b.x).map(i=>i.str).join(' ').replace(/\s+/g,' ').trim()).filter(Boolean).join('\n');
+}
 $('resumeFile').addEventListener('change', async e => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-  setStatus('Reading ' + file.name + '…');
+  const file=e.target.files&&e.target.files[0];
+  if(!file)return;
+  const ext=file.name.toLowerCase().split('.').pop();
+  if(!['pdf','docx','txt'].includes(ext)){setStatus('Unsupported file. Please choose a PDF, DOCX, or TXT resume.');return}
+  $('importSummary').innerHTML='';
+  setImportProgress(2,'Starting import…');
+  setStatus('Preparing '+file.name+'. Your current fields will be replaced by the newly parsed resume; export a JSON backup first if you want to keep them.');
+  const previousPhoto=data.photo;
   try {
-    let text = '';
-    let extractedPhoto = '';
-    const ext = file.name.toLowerCase().split('.').pop();
-    if (ext === 'txt') {
-      text = await file.text();
-    } else if (ext === 'pdf') {
+    let text='';
+    let extractedPhoto='';
+    if(ext==='txt'){
+      setImportProgress(25,'Reading text file…');
+      text=await file.text();
+      setImportProgress(65,'Preparing text for parsing…');
+    } else if(ext==='pdf') {
+      setImportProgress(8,'Loading PDF reader…');
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
-      for (let p = 1; p <= pdf.numPages; p++) {
-        const page = await pdf.getPage(p);
-        const content = await page.getTextContent();
-        text += content.items.map(item => item.str).join(' ') + '\n';
-        if (!data.photo && !extractedPhoto) extractedPhoto = await extractPdfImage(page, window.pdfjsLib);
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      setImportProgress(15,'Opening PDF…');
+      const pdf=await window.pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+      for(let p=1;p<=pdf.numPages;p++){
+        setImportProgress(15+(p/pdf.numPages)*60,'Reading PDF page '+p+' of '+pdf.numPages+'…');
+        const page=await pdf.getPage(p);
+        const content=await page.getTextContent();
+        text+=pdfItemsToLines(content)+'\n';
+        if(!previousPhoto&&!extractedPhoto) extractedPhoto=await extractPdfImage(page,window.pdfjsLib);
       }
-    } else if (ext === 'docx') {
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js');
-      const result = await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-      text = result.value;
     } else {
-      throw new Error('Please choose a PDF, DOCX, or TXT file.');
+      setImportProgress(10,'Loading DOCX reader…');
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js');
+      setImportProgress(25,'Extracting document text…');
+      const result=await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
+      text=result.value;
+      setImportProgress(70,'Preparing extracted text…');
     }
-    if (!data.photo && extractedPhoto) data.photo = extractedPhoto;
-    $('rawText').value = text;
-    renderAll();
-    setStatus('Text extracted from ' + file.name + '. ' + (data.photo ? 'A profile image is available; check the preview.' : 'No extractable profile photo was found; add one manually in Profile.') + ' Choose “Parse text into fields”, then review every section.');
+    if(!text.trim()) throw new Error('No selectable text was found. If this is a scanned/image-only PDF, run OCR on it or paste its text manually.');
+    $('rawText').value=text;
+    if(!previousPhoto&&extractedPhoto)data.photo=extractedPhoto;
+    setImportProgress(82,'Parsing resume sections into editable fields…');
+    parseText(true);
     setTab('import');
-  } catch (err) {
-    setStatus('Import failed: ' + err.message + '. You can still paste text into the box below.');
+    const roleCount=(data.experience||[]).length,projectCount=(data.projects||[]).length,educationCount=(data.education||[]).length;
+    $('importSummary').innerHTML='<div class="import-summary-title">Resume parsed: '+esc(file.name)+'</div><div class="import-summary-stats"><span>'+roleCount+' experience entries</span><span>'+projectCount+' projects</span><span>'+educationCount+' education entries</span></div><p>'+(data.photo?'A profile image was extracted or retained.':'No profile photo could be extracted automatically; you can add one in Profile.')+' Review the fields carefully because PDF layouts vary.</p><button type="button" class="btn primary" id="reviewImportedBtn">Review parsed fields</button>';
+    $('reviewImportedBtn').addEventListener('click',()=>setTab('profile'));
+    setImportProgress(100,'Import complete');
+    setStatus('Successfully extracted text and populated resume fields from '+file.name+'. Check the preview and review the parsed sections.');
+    finishImportProgress();
+  } catch(err) {
+    $('importProgressWrap').hidden=false;
+    $('importProgress').value=0;
+    $('importProgressPercent').textContent='!';
+    $('importProgressLabel').textContent='Import failed';
+    setStatus('Could not import '+file.name+': '+err.message+'. Try a text-based PDF, DOCX, or paste the resume text manually.');
   }
 });
 function loadScript(src) {
@@ -182,9 +228,10 @@ function loadScript(src) {
   });
 }
 
-function parseText() {
+function parseText(replaceExisting=false) {
   const text = $('rawText').value.trim();
   if (!text) { setStatus('Upload a resume or paste its text first.'); return; }
+  if(replaceExisting){const old=data;data={...emptyData(),photo:old.photo||'',photoWidth:old.photoWidth||94,photoHeight:old.photoHeight||112,photoShape:old.photoShape||'rectangle',photoPosition:old.photoPosition||'left'}}
   const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
   const joined = lines.join('\n');
   const email = (joined.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i) || [])[0] || '';
@@ -205,16 +252,16 @@ function parseText() {
     }
     return lines.slice(start + 1, end).join('\n');
   }
-  if (name && !data.name) data.name = name;
-  if (email && !data.email) data.email = email;
-  if (phone && !data.phone) data.phone = phone;
-  if (urls.length && !data.links) data.links = urls.join(' · ');
+  if (name && (!data.name||replaceExisting)) data.name = name;
+  if (email && (!data.email||replaceExisting)) data.email = email;
+  if (phone && (!data.phone||replaceExisting)) data.phone = phone;
+  if (urls.length && (!data.links||replaceExisting)) data.links = urls.join(' · ');
   const summary = sectionText('professional summary|summary|profile|objective');
-  if (summary && !data.summary) data.summary = summary;
+  if (summary && (!data.summary||replaceExisting)) data.summary = summary;
   const skills = sectionText('technical skills|skills|core competencies');
-  if (skills && !data.skills) data.skills = skills.replace(/\n/g, ', ');
+  if (skills && (!data.skills||replaceExisting)) data.skills = skills.replace(/\n/g, ', ');
   const exp = sectionText('professional experience|work experience|experience|employment');
-  if (exp && !data.experience.length) {
+  if (exp && (!data.experience.length||replaceExisting)) {
     const chunks = exp.split(/\n(?=[^\n]{0,90}(?:\||\s[-–—]\s|\b(?:20\d\d|19\d\d)\b))/).filter(Boolean);
     data.experience = chunks.map(chunk => {
       const roleLines = chunk.split('\n').filter(Boolean);
@@ -226,11 +273,11 @@ function parseText() {
     }).filter(item => item.title);
   }
   const projects = sectionText('projects|selected projects|projects & contributions');
-  if (projects && !data.projects.length) data.projects = [{ title: 'Review imported project details', link: '', description: projects }];
+  if (projects && (!data.projects.length||replaceExisting)) data.projects = [{ title: 'Review imported project details', link: '', description: projects }];
   const education = sectionText('education|academic background|qualifications');
-  if (education && !data.education.length) data.education = [{ school: education.split('\n')[0] || '', title: '', dates: '', startDate: '', endDate: '', description: education.split('\n').slice(1).join('\n') }];
+  if (education && (!data.education.length||replaceExisting)) data.education = [{ school: education.split('\n')[0] || '', title: '', dates: '', startDate: '', endDate: '', description: education.split('\n').slice(1).join('\n') }];
   setStatus('Parsing complete. Please verify every field; automatic parsing can miss columns, dates, and bullet groupings.');
   renderAll();
-  setTab('profile');
+  if(!replaceExisting)setTab('profile');
 }
 $('parseBtn').addEventListener('click', parseText);
