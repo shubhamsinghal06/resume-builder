@@ -14,5 +14,22 @@ function renderPreviewOnly(){
  html+='<div class="resume-columns"><aside class="resume-left">'+section('Domain Expertise',expertise.length?'<div class="skill-line">'+expertise.map(esc).join(' · ')+'</div>':'')+section('Technical Skills',skills.length?'<div class="skill-line">'+skills.map(esc).join(' · ')+'</div>':'')+section('Education',education)+section('Certifications & Awards',certifications)+section('Languages',data.languages?'<div>'+esc(data.languages)+'</div>':'')+'</aside><div class="resume-right">'+section('Professional Experience',ex||'<div class="empty">Add your employment history.</div>')+section('Projects & SDKs',projects)+'</div></div>';
  $('resumePreview').innerHTML=html;updateCounts()
 }
-function updateCounts(){$('experienceCount').textContent=(data.experience||[]).length+' experience'+((data.experience||[]).length===1?'':'s')}
+function updateCounts(){
+ const roles=data.experience||[];
+ const months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+ function monthIndex(value,isEnd){
+  const s=String(value||'').trim().toLowerCase();if(!s)return null;
+  if(/present|current|now/.test(s))return new Date().getFullYear()*12+new Date().getMonth();
+  const y=(s.match(/(?:19|20)\d{2}/)||[])[0];if(!y)return null;
+  const m=(s.match(/jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/)||[])[0];
+  return Number(y)*12+(m?months[m]:isEnd?11:0);
+ }
+ const intervals=roles.map(r=>{const start=monthIndex(r.start,false),end=monthIndex(r.end,true);return start===null?null:[start,Math.max(start,end===null?start:end)]}).filter(Boolean).sort((a,b)=>a[0]-b[0]);
+ let total=0,start=null,end=null;
+ for(const range of intervals){if(start===null){[start,end]=range}else if(range[0]<=end+1){end=Math.max(end,range[1])}else{total+=end-start+1;[start,end]=range}}
+ if(start!==null)total+=end-start+1;
+ const years=Math.floor(total/12),monthsLeft=total%12;
+ const tenure=total>=12?(years+'+ yrs'):total>0?(monthsLeft+' mos'):'';
+ $('experienceCount').textContent=roles.length+' role'+(roles.length===1?'':'s')+(tenure?' · '+tenure:'')
+}
 function renderAll(){document.querySelectorAll('[data-bind]').forEach(el=>el.value=data[el.dataset.bind]||'');renderCollections();renderPreviewOnly();$('photoStatus').textContent=data.photo?'Photo selected':'No photo selected'}
