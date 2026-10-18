@@ -51,6 +51,7 @@ function resizePhoto(file) {
 function syncPhotoPickerUI(message) {
   const thumb=$('photoPreviewThumb');
   const remove=$('removePhotoBtn');
+  if (!thumb || !remove || !$('photoStatus')) return;
   if (data.photo) {
     thumb.innerHTML='<img src="'+data.photo+'" alt="Selected profile photo">';
     remove.disabled=false;
@@ -61,10 +62,6 @@ function syncPhotoPickerUI(message) {
     if (!message) $('photoStatus').textContent='No photo selected. Choose a JPG, PNG, or WebP image.';
   }
 }
-$('choosePhotoBtn').addEventListener('click', () => {
-  // Open the native file picker only in direct response to the user's tap.
-  $('photoFile').click();
-});
 $('photoFile').addEventListener('change', async e => {
   const file=e.target.files&&e.target.files[0];
   if (!file) return;
@@ -84,9 +81,11 @@ $('photoFile').addEventListener('change', async e => {
   }
   try {
     const imageData=await resizePhoto(file);
+    if(typeof imageData!=='string'||!imageData.startsWith('data:image/')) throw new Error('Image conversion did not produce an embeddable image.');
     const testImage=new Image();
     await new Promise((resolve,reject)=>{testImage.onload=resolve;testImage.onerror=()=>reject(new Error('The selected image could not be decoded.'));testImage.src=imageData;});
     data.photo=imageData;
+    syncPhotoPickerUI('Photo ready · '+file.name);
     renderAll();
     syncPhotoPickerUI('Photo ready · '+file.name);
     $('photoStatus').textContent='Photo ready · '+file.name;
@@ -94,6 +93,7 @@ $('photoFile').addEventListener('change', async e => {
   } catch(err) {
     $('photoStatus').textContent='Could not load photo: '+err.message;
     setStatus('Could not use that photo: '+err.message);
+    console.error('Profile photo selection failed:',err);
   }
 });
 $('removePhotoBtn').addEventListener('click', () => {
