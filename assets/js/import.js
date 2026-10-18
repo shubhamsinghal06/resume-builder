@@ -48,36 +48,63 @@ function resizePhoto(file) {
     reader.readAsDataURL(file);
   });
 }
+function syncPhotoPickerUI(message) {
+  const thumb=$('photoPreviewThumb');
+  const remove=$('removePhotoBtn');
+  if (data.photo) {
+    thumb.innerHTML='<img src="'+data.photo+'" alt="Selected profile photo">';
+    remove.disabled=false;
+    if (!message) $('photoStatus').textContent='Photo selected and ready for the resume.';
+  } else {
+    thumb.innerHTML='<span>No photo</span>';
+    remove.disabled=true;
+    if (!message) $('photoStatus').textContent='No photo selected. Choose a JPG, PNG, or WebP image.';
+  }
+}
+$('choosePhotoBtn').addEventListener('click', () => {
+  // Open the native file picker only in direct response to the user's tap.
+  $('photoFile').click();
+});
 $('photoFile').addEventListener('change', async e => {
-  const file = e.target.files && e.target.files[0];
+  const file=e.target.files&&e.target.files[0];
   if (!file) return;
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-    setStatus('Choose a JPG, PNG, or WebP photo.');
-    e.target.value = '';
+  $('photoStatus').textContent='Loading '+file.name+'…';
+  setStatus('Loading profile photo…');
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type)) {
+    $('photoStatus').textContent='Unsupported format. Choose JPG, PNG, or WebP.';
+    setStatus('Choose a JPG, PNG, or WebP image.');
+    e.target.value='';
     return;
   }
-  if (file.size > 8 * 1024 * 1024) {
-    setStatus('Choose an image smaller than 8 MB.');
-    e.target.value = '';
+  if (file.size>8*1024*1024) {
+    $('photoStatus').textContent='Image is too large. Maximum size is 8 MB.';
+    setStatus('Choose a profile photo smaller than 8 MB.');
+    e.target.value='';
     return;
   }
   try {
-    data.photo = await resizePhoto(file);
+    const imageData=await resizePhoto(file);
+    const testImage=new Image();
+    await new Promise((resolve,reject)=>{testImage.onload=resolve;testImage.onerror=()=>reject(new Error('The selected image could not be decoded.'));testImage.src=imageData;});
+    data.photo=imageData;
     renderAll();
-    $('photoStatus').textContent = 'Photo ready · ' + file.name;
-    setStatus('Profile photo added. It is embedded in the preview and PDF print output.');
-  } catch (err) {
-    setStatus('Could not use that photo: ' + err.message);
+    syncPhotoPickerUI('Photo ready · '+file.name);
+    $('photoStatus').textContent='Photo ready · '+file.name;
+    setStatus('Profile photo added. It is visible in the preview and will be included when you print/save as PDF.');
+  } catch(err) {
+    $('photoStatus').textContent='Could not load photo: '+err.message;
+    setStatus('Could not use that photo: '+err.message);
   }
 });
 $('removePhotoBtn').addEventListener('click', () => {
-  data.photo = '';
-  $('photoFile').value = '';
+  if (!data.photo) return;
+  data.photo='';
+  $('photoFile').value='';
   renderAll();
-  $('photoStatus').textContent = 'No photo selected';
-  setStatus('Profile photo removed.');
+  syncPhotoPickerUI('Photo removed');
+  $('photoStatus').textContent='Photo removed. It will no longer appear in the preview or printed PDF.';
+  setStatus('Profile photo removed from the resume.');
 });
-
 async function extractPdfImage(page, pdfjs) {
   try {
     const ops = await page.getOperatorList();
