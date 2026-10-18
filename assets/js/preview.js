@@ -22,6 +22,7 @@ function updateCounts(){
  function monthIndex(value,isEnd){
   const s=String(value||'').trim().toLowerCase();if(!s)return null;
   if(/present|current|now/.test(s))return new Date().getFullYear()*12+new Date().getMonth();
+  const ym=s.match(/^(19|20)\d{2}-(\d{2})$/);if(ym)return Number(s.slice(0,4))*12+Number(ym[2])-1;
   const y=(s.match(/(?:19|20)\d{2}/)||[])[0];if(!y)return null;
   const m=(s.match(/jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/)||[])[0];
   return Number(y)*12+(m?months[m]:isEnd?11:0);
@@ -34,4 +35,4 @@ function updateCounts(){
  const tenure=total>=12?(years+'+ yrs'):total>0?(monthsLeft+' mos'):'';
  $('experienceCount').textContent=roles.length+' role'+(roles.length===1?'':'s')+(tenure?' · '+tenure:'')
 }
-function renderAll(){document.querySelectorAll('[data-bind]').forEach(el=>el.value=data[el.dataset.bind]||'');renderCollections();renderPreviewOnly();document.querySelectorAll('[data-photo-setting]').forEach(el=>el.value=data[el.dataset.photoSetting]??({photoWidth:94,photoHeight:112,photoShape:'rectangle',photoPosition:'left'}[el.dataset.photoSetting]));$('photoStatus').textContent=data.photo?'Photo selected':'No photo selected'}
+function renderAll(){data.education=(data.education||[]).map(item=>{if(!item.startDate&&!item.endDate&&item.dates){const parts=String(item.dates).split(/\s*(?:–|—|\bto\b|-)\s*/i);return {...item,startDate:toMonthInput(parts[0]),endDate:toMonthInput(parts[1])}}return item});document.querySelectorAll('[data-bind]').forEach(el=>el.value=data[el.dataset.bind]||'');renderCollections();renderPreviewOnly();document.querySelectorAll('[data-photo-setting]').forEach(el=>el.value=data[el.dataset.photoSetting]??({photoWidth:94,photoHeight:112,photoShape:'rectangle',photoPosition:'left'}[el.dataset.photoSetting]));$('photoStatus').textContent=data.photo?'Photo selected':'No photo selected'}
