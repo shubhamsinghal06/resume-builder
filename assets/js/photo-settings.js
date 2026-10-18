@@ -1,0 +1,2 @@
+// Photo preferences are persisted with resume data and reflected in preview/print.
+document.querySelectorAll('[data-photo-setting]').forEach(el=>el.addEventListener('input',()=>{const key=el.dataset.photoSetting;let value=el.value;if(key==='photoWidth')value=Math.min(240,Math.max(40,Number(value)||94));if(key==='photoHeight')value=Math.min(280,Math.max(40,Number(value)||112));data[key]=value;renderPreviewOnly()}));
