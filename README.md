@@ -2,6 +2,8 @@
 
 A personal, single-template resume builder designed for GitHub Pages.
 
+The app uses modular vanilla JavaScript and CSS with no build step or framework; resume content remains local to the browser.
+
 ## Features
 - Import PDF, DOCX, or TXT resume text in your browser
 - Parse common profile details and resume sections into editable fields
@@ -9,6 +11,23 @@ A personal, single-template resume builder designed for GitHub Pages.
 - Manage projects, contributions, education, skills, certifications, and languages
 - Live A4 resume preview and browser Print / Save as PDF
 - Save to browser storage or export/import resume data as JSON
+
+## Builder version and release timestamp
+- The page footer shows the builder version and last code-update timestamp in India Standard Time (IST).
+- **Release rule:** every builder code release must bump `BUILDER_VERSION` and update `BUILDER_UPDATED_AT` in `assets/js/version.js` in the same release, and keep the `builder-version` meta tag in `index.html` in sync.
+- This is the release timestamp, not the time the user last saved their resume.
+
+## Project structure
+- `index.html` — page structure and script/style loading order
+- `assets/css/app.css` — editor and application layout
+- `assets/css/resume.css` — resume preview, responsive layout, and print rules
+- `assets/js/state.js` — shared resume state and helpers
+- `assets/js/editor.js` — editor fields and repeatable sections
+- `assets/js/preview.js` — live resume rendering
+- `assets/js/storage.js` — local persistence and JSON export
+- `assets/js/import.js` — PDF/DOCX/TXT import, parsing, and photo handling
+- `assets/js/app.js` — application startup
+- `assets/js/version.js` — release version and update timestamp
 
 ## Enable GitHub Pages
 1. Open **Settings → Pages** in this repository.
