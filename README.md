@@ -10,6 +10,7 @@ The app uses modular vanilla JavaScript and CSS with no build step or framework;
 - Add, edit, reorder, and remove employment experience; count updates automatically
 - Manage projects, contributions, education, domain expertise, skills, certifications, and languages
 - Compact two-column resume template with a subtle vertical divider and print-focused spacing
+- Experience tenure estimate based on role dates, with overlapping jobs counted only once
 - Live A4 resume preview and browser Print / Save as PDF
 - Save to browser storage or export/import resume data as JSON
 - Compare resume keywords against a target job description locally (heuristic estimate, not a real ATS score)
