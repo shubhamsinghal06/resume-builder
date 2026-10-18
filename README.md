@@ -5,7 +5,9 @@ A personal, single-template resume builder designed for GitHub Pages.
 The app uses modular vanilla JavaScript and CSS with no build step or framework; resume content remains local to the browser.
 
 ## Features
-- Import PDF, DOCX, or TXT resume text in your browser
+- Import PDF, DOCX, or TXT resume text in your browser with progress, automatic field parsing, and an import summary
+- Expand/collapse the live resume preview when needed
+- Show the latest main-branch commit and timestamp dynamically in 12-hour IST format when GitHub metadata is reachable
 - Parse common profile details and resume sections into editable fields
 - Add, edit, reorder, and remove employment experience; count updates automatically
 - Manage projects, contributions, education, domain expertise, skills, certifications, and languages
