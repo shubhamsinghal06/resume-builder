@@ -14,7 +14,7 @@ function renderPreviewOnly(){
  const ex=(data.experience||[]).map(x=>'<div class="resume-entry"><div class="entry-heading"><strong>'+esc(x.title||'Role')+(x.company?' · '+esc(x.company):'')+'</strong><span class="entry-date">'+esc(dateRange(x.start,x.end))+'</span></div>'+(x.location?'<div class="entry-sub">'+esc(x.location)+'</div>':'')+bulletBlock(x.description)+'</div>').join('');
  const projects=(data.projects||[]).map(x=>'<div class="resume-entry"><div class="entry-heading"><strong>'+esc(x.title||'Project')+'</strong><span class="entry-date">'+esc(x.link||'')+'</span></div>'+bulletBlock(x.description)+'</div>').join('');
  html+='<div class="resume-columns"><aside class="resume-left">'+section('Domain Expertise',expertise.length?'<div class="skill-line">'+expertise.map(esc).join(' · ')+'</div>':'')+section('Technical Skills',skills.length?'<div class="skill-line">'+skills.map(esc).join(' · ')+'</div>':'')+section('Education',education)+section('Certifications & Awards',certifications)+section('Languages',data.languages?'<div>'+esc(data.languages)+'</div>':'')+'</aside><div class="resume-right">'+section('Professional Experience',ex||'<div class="empty">Add your employment history.</div>')+section('Projects & SDKs',projects)+'</div></div>';
- $('resumePreview').innerHTML=html;updateCounts()
+ $('resumePreview').innerHTML=html;const renderedPhoto=$('resumePreview').querySelector('.resume-photo');if(renderedPhoto){renderedPhoto.addEventListener('error',()=>{setStatus('The profile photo could not be displayed. Please choose the image again.');renderedPhoto.remove()},{once:true})}if(typeof syncPhotoPickerUI==='function')syncPhotoPickerUI();updateCounts()
 }
 function updateCounts(){
  const roles=data.experience||[];
