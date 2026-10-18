@@ -8,7 +8,8 @@ The app uses modular vanilla JavaScript and CSS with no build step or framework;
 - Import PDF, DOCX, or TXT resume text in your browser
 - Parse common profile details and resume sections into editable fields
 - Add, edit, reorder, and remove employment experience; count updates automatically
-- Manage projects, contributions, education, skills, certifications, and languages
+- Manage projects, contributions, education, domain expertise, skills, certifications, and languages
+- Compact two-column resume template with a subtle vertical divider and print-focused spacing
 - Live A4 resume preview and browser Print / Save as PDF
 - Save to browser storage or export/import resume data as JSON
 - Compare resume keywords against a target job description locally (heuristic estimate, not a real ATS score)
