@@ -11,7 +11,10 @@ The app uses modular vanilla JavaScript and CSS with no build step or framework;
 - Manage projects, contributions, education, domain expertise, skills, certifications, and languages
 - Compact two-column resume template with a subtle vertical divider and print-focused spacing
 - Experience tenure estimate based on role dates, with overlapping jobs counted only once
-- Live A4 resume preview and browser Print / Save as PDF
+- Live A4 resume preview and browser Print / Save as PDF, with image decode before printing
+- Month pickers for employment and education dates, including a current-role toggle
+- Field validation for name, email, phone, URLs, and chronological date ranges
+- Photo width/height, rectangle/circle shape, and left/centre/right header placement
 - Save to browser storage or export/import resume data as JSON
 - Compare resume keywords against a target job description locally (heuristic estimate, not a real ATS score)
 
