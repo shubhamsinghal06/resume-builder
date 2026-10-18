@@ -3,11 +3,13 @@ function section(title,content){if(!content)return '';return '<section class="re
 function bulletBlock(s){const lines=safeLines(s);return lines.length?'<ul>'+lines.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':''}
 function renderPreviewOnly(){
  const contact=[data.email,data.phone,data.location,data.links].filter(Boolean).map(esc).join('<span>•</span>');
- let html='<header class="resume-header">'+(data.photo?'<img class="resume-photo" src="'+data.photo+'" alt="Profile photo">':'')+'<div class="resume-header-main"><h1 class="resume-name">'+esc(data.name||'Your Name')+'</h1><div class="resume-role">'+esc(data.headline||'Professional Headline')+'</div><div class="contact">'+(contact||'<span class="empty">Email · phone · location · links</span>')+'</div></div></header>';
+ const photoStyle='width:'+Math.min(240,Math.max(40,Number(data.photoWidth)||94))+'px;height:'+Math.min(280,Math.max(40,Number(data.photoHeight)||112))+'px';
+ const photoClass=data.photoShape==='circle'?'resume-photo photo-circle':'resume-photo';
+ let html='<header class="resume-header photo-'+esc(data.photoPosition||'left')+'">'+(data.photo?'<img class="'+photoClass+'" style="'+photoStyle+'" src="'+data.photo+'" alt="Profile photo">':'')+'<div class="resume-header-main"><h1 class="resume-name">'+esc(data.name||'Your Name')+'</h1><div class="resume-role">'+esc(data.headline||'Professional Headline')+'</div><div class="contact">'+(contact||'<span class="empty">Email · phone · location · links</span>')+'</div></div></header>';
  html+=section('Professional Summary',data.summary?'<div class="resume-summary">'+esc(data.summary)+'</div>':'');
  const skills=safeLines((data.skills||'').replace(/,/g,'\n'));
  const expertise=safeLines((data.domainExpertise||'').replace(/,/g,'\n'));
- const education=(data.education||[]).map(x=>'<div class="resume-entry"><div class="entry-heading"><strong>'+esc(x.title||'Degree')+'</strong><span class="entry-date">'+esc(x.dates||'')+'</span></div><div class="entry-sub">'+esc(x.school||'')+'</div>'+bulletBlock(x.description)+'</div>').join('');
+ const education=(data.education||[]).map(x=>'<div class="resume-entry"><div class="entry-heading"><strong>'+esc(x.title||'Degree')+'</strong><span class="entry-date">'+esc(dateRange(x.startDate||x.dates||'',x.endDate||''))+'</span></div><div class="entry-sub">'+esc(x.school||'')+'</div>'+bulletBlock(x.description)+'</div>').join('');
  const certifications=bulletBlock(data.certifications);
  const ex=(data.experience||[]).map(x=>'<div class="resume-entry"><div class="entry-heading"><strong>'+esc(x.title||'Role')+(x.company?' · '+esc(x.company):'')+'</strong><span class="entry-date">'+esc(dateRange(x.start,x.end))+'</span></div>'+(x.location?'<div class="entry-sub">'+esc(x.location)+'</div>':'')+bulletBlock(x.description)+'</div>').join('');
  const projects=(data.projects||[]).map(x=>'<div class="resume-entry"><div class="entry-heading"><strong>'+esc(x.title||'Project')+'</strong><span class="entry-date">'+esc(x.link||'')+'</span></div>'+bulletBlock(x.description)+'</div>').join('');
@@ -32,4 +34,4 @@ function updateCounts(){
  const tenure=total>=12?(years+'+ yrs'):total>0?(monthsLeft+' mos'):'';
  $('experienceCount').textContent=roles.length+' role'+(roles.length===1?'':'s')+(tenure?' · '+tenure:'')
 }
-function renderAll(){document.querySelectorAll('[data-bind]').forEach(el=>el.value=data[el.dataset.bind]||'');renderCollections();renderPreviewOnly();$('photoStatus').textContent=data.photo?'Photo selected':'No photo selected'}
+function renderAll(){document.querySelectorAll('[data-bind]').forEach(el=>el.value=data[el.dataset.bind]||'');renderCollections();renderPreviewOnly();document.querySelectorAll('[data-photo-setting]').forEach(el=>el.value=data[el.dataset.photoSetting]??({photoWidth:94,photoHeight:112,photoShape:'rectangle',photoPosition:'left'}[el.dataset.photoSetting]));$('photoStatus').textContent=data.photo?'Photo selected':'No photo selected'}
