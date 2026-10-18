@@ -11,6 +11,7 @@ The app uses modular vanilla JavaScript and CSS with no build step or framework;
 - Manage projects, contributions, education, skills, certifications, and languages
 - Live A4 resume preview and browser Print / Save as PDF
 - Save to browser storage or export/import resume data as JSON
+- Compare resume keywords against a target job description locally (heuristic estimate, not a real ATS score)
 
 ## Builder version and release timestamp
 - The page footer shows the builder version and last code-update timestamp in India Standard Time (IST).
@@ -26,6 +27,7 @@ The app uses modular vanilla JavaScript and CSS with no build step or framework;
 - `assets/js/preview.js` — live resume rendering
 - `assets/js/storage.js` — local persistence and JSON export
 - `assets/js/import.js` — PDF/DOCX/TXT import, parsing, and photo handling
+- `assets/js/ats.js` — local job-description keyword matching
 - `assets/js/app.js` — application startup
 - `assets/js/version.js` — release version and update timestamp
 
